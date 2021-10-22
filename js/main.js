@@ -1,12 +1,104 @@
+$(document).ready(function() {
+	var $imagesCarousel = $('.carouselOfImages').flickity({
+	  contain: true,
+	  autoPlay: true,
+	  wrapAround: true,
+	  friction: 0.3
+	});
+	function resizeCells() {
+	  var flkty = $imagesCarousel.data('flickity');
+	  var $current = flkty.selectedIndex
+	  var $length = flkty.cells.length
+	  if ($length <='5') {
+		 $imagesCarousel.flickity('destroy');
+	  }
+	  $('.carouselOfImages .carouselImage').removeClass("nextToSelected");
+	  $('.carouselOfImages .carouselImage').eq($current-1).addClass("nextToSelected");
+	  if ($current+1 == $length) {
+		 var $endCell = "0"
+	  } else {
+		 var $endCell = $current+1
+	  }
+		$('.carouselOfImages .carouselImage').eq($endCell).addClass("nextToSelected");
+	  };
+	resizeCells();
+	
+	$imagesCarousel.on('scroll.flickity', function() {
+		 resizeCells();
+	  });
+	  
+	  
+	  
+	  
+	  
+	$(".carouselImage img").click(function() { 
+	  var $this = $(this);
+	  var imageID = $this.attr('data-tab');
+	  var imageSrc = $this.attr('src');
+	  
+	  $('.' + imageID).removeClass('hide');
+	  $('.' + imageID + ' .product-detail-image img').attr('src', imageSrc);
+	});
+	
+	$('.product-detail-close,.product-detail').on('click', function() {
+	  $('.product-detail').addClass('hide');
+	});
+	
+	  $('.modal-video').on('hidden.bs.modal', function (e) {
+		 $('.modal-video iframe').attr('src', $('.modal-video iframe').attr('src'));
+	  });
+	
+	autoPlayYouTubeModal();
+	
+	  function autoPlayYouTubeModal() {
+			var trigger = $("body").find('[data-the-video]');
+			trigger.click(function () {
+				 var theModal = $(this).data("target"),
+					  videoSRC = $(this).attr("data-the-video"),
+					  videoSRCauto = videoSRC + "&autoplay=1";
+				 $(theModal + ' iframe').attr('src', videoSRCauto);
+				 $(theModal + ' button.close').click(function () {
+					  $(theModal + ' iframe').attr('src', videoSRC);
+				 });
+				 $('.modal-video').click(function () {
+					  $(theModal + ' iframe').attr('src', videoSRC);
+				 });
+			});
+	  }
+	
+	$(window).on('load resize', function(){
+	  var $window = $(window);
+	  $('.modal-fill-vert .modal-body > *').height(function(){
+			return $window.height()-60;
+		 });
+	  }); 
+	});
+	
+	
+	
+	  
+	
+	
+
+
+
+
+
+
 var elList = document.querySelector('.list');
 var elForm = document.querySelector('.form');
-var elSelect = document.querySelector('select');
+var elSelect = document.querySelector('.select');
+let elSearchInput = document.querySelector('.search');
+let elSortSelect = document.querySelector('.js-sort');
 let elBookmarks = document.querySelector('.bookmark__list');
-let elModalList = document.querySelector('.modal__list');
+let elFilmModal = document.querySelector('.modal__show');
+const  elFilmHeadingModal = document.querySelector('.modal__heading')
+const  elFilmPosterModal = document.querySelector('.modal__poster')
 
 
 
-function generateGenres(films) {
+
+function generateGenres(films, node) {
 	var resultGaners = [];
 
 	films.forEach((film) => {
@@ -16,23 +108,20 @@ function generateGenres(films) {
 			}
 		});
 	});
-	for (var option of resultGaners) {
-		var elOption = document.createElement('option');
-		elOption.value = option;
-		elOption.textContent = option;
-		elSelect.appendChild(elOption);
-	}
+
+	resultGaners.forEach((genre) =>{
+		const newOption = document.createElement('option');
+		newOption.value = genre; 
+		newOption.textContent = genre;
+		node.appendChild(newOption)
+	})
+
 }
 
-elForm.addEventListener('submit', (evt) => {
-	evt.preventDefault();
-	renderFilms(films, elList);
-})
-
-generateGenres(films);
 
 function renderFilms(arr, node) {
 	elList.innerHTML = null;
+	node.innerHTML = null;
 	arr.forEach((film) => {
 		if (film.genres.includes(elSelect.value)) {
 			var newLi = document.createElement('li');
@@ -41,14 +130,14 @@ function renderFilms(arr, node) {
 			var newParagraph = document.createElement('p');
 			var newTime = document.createElement('time');
 			let bookMarkBtn = document.createElement('button');
-			let modalBtn = document.createElement('button');
+			let newMoreBtn = document.createElement('button');
 
 
 			newHeading.textContent = film.title;
 			newParagraph.textContent =
 				film.overview.split(' ').slice(0, 10).join(' ') + '...';
 			bookMarkBtn.textContent = 'Bookmark'
-			modalBtn.textContent = 'Modal'
+			newMoreBtn.textContent = 'Modal'
 
 			newLi.setAttribute('class', 'list__item film mb-3 text-center shadow');
 			newHeading.setAttribute('class', 'film__heading ');
@@ -58,16 +147,16 @@ function renderFilms(arr, node) {
 			newImage.setAttribute('width', '300');
 			newImage.setAttribute('height', '300');		
 			bookMarkBtn.setAttribute('class', 'film__book btn mx-1 my-1');
-			modalBtn.setAttribute('class', 'modal__btn, btn');
+			newMoreBtn.setAttribute('class', 'more__button btn');
 			bookMarkBtn.dataset.filmId = film.id;
-			modalBtn.dataset.filmId = film.id;
+			newMoreBtn.dataset.filmId = film.id;
 
 			newLi.appendChild(newHeading);
 			newLi.appendChild(newImage);
 			newLi.appendChild(newParagraph);
 			newLi.appendChild(newTime);
 			newLi.appendChild(bookMarkBtn);
-			newLi.appendChild(modalBtn);
+			newLi.appendChild(newMoreBtn);
 
 
 			node.appendChild(newLi);
@@ -111,7 +200,7 @@ function renderBookmarks(arr, node) {
 
 }
 
-
+// Bookmarks
 elBookmarks.addEventListener('click', (evt) =>{
 	if(evt.target.matches('.bookmarks__btn--del')) {
 		const filmId = evt.target.dataset.filmId;
@@ -122,70 +211,95 @@ elBookmarks.addEventListener('click', (evt) =>{
 	}
 })
 
+// Modla--show
+elFilmModal.addEventListener('click', (evt) =>{
+	const isTargetRemover = evt.target.matches('.modal__show')|| evt.target.matches('.modal__close-button')
+
+	if (isTargetRemover){
+		evt.currentTarget.classList.remove('modal--show');
+	}
+})
+ 
+function renderFilmModal (film) {
+	elFilmHeadingModal.textContent = film.title;
+	elFilmPosterModal.src = film.poster
+}
+
 
 elList.addEventListener('click', (evt) => {
-	const isBookMarkBtn = evt.target.matches('.film__book')
+	const isBookMarkBtn = evt.target.matches('.film__book');
+	const isMoreBtn = evt.target.matches('.more__button');
+
+
 	if (isBookMarkBtn) {
 		const filmId = evt.target.dataset.filmId;
 
 		const foundFilm = films.find((row) => row.id === filmId);
 		if (!bookMarks.includes(foundFilm)) {
 			bookMarks.push(foundFilm)
+			renderBookmarks(bookMarks, elBookmarks);
 		}
-		renderBookmarks(bookMarks, elBookmarks);
-	};
+	}else if (isMoreBtn) {
+		const filmId = evt.target.dataset.filmId;
+
+		const foundFilm = films.find((row) => row.id === filmId);
+		elFilmModal.classList.add('modal--show');
+		renderFilmModal(foundFilm); 
+	}
 
 });
 
-
-
-const modal = [];
-function renderFilmModal (arr, node) {
-	node.innerHTML = null;
-
-	arr.forEach((film) => {
-		const modalLi = document.createElement('li');
-		const modalHeading = document.createElement('h2');
-		const modalGanresList = document.createElement('ul');
-		const modalText = document.createElement('p');
-		const modalImge = document.createElement('img');
-		const modalData = document.createElement('tome');
-		const modalClose = document.createElement('button');
-
-		modalHeading.textContent = film.title;
-		modalText.textContent = film.overview;
-		modalClose.innerHTML = '&times';
-		modalData.textContent = normalizeDate(newGenreLi);
-
-		for (let ganre of film.ganres) {
-			let newGenreLi = document.querySelector('li');
-			newGenreLi.setAttribute('class', 'genre__item');
-			newGenreLi.textContent = ganre;
-			modalGanresList.appendChild(newGenreLi);
+const sortFns = {
+	0:(a, b) => {
+		if (a.title < b.title){
+			return -1
 		}
+		if (a.title > b.title) {
+			return 1
+		}
+		return 0
+	},
 
-		modalLi.setAttribute('class', 'modal__item');
-		modalImge.setAttribute('src', film.poster);
-		modalImge.setAttribute('alt', film.title, 'poster');
-		modalImge.setAttribute('clas', 'modal__imge');
-		modalImge.setAttribute('width', '300');
-		modalImge.setAttribute('height',' 300');
-		modalGanresList.setAttribute('class', 'modalgener__list');
-		modalData.setAttribute('class', 'modal__time');
-		modalClose.setAttribute('class', 'modal__close');
-		modalClose.dataset.filmId = film.id;
+	1: (a, b) => {
+		if (a.title < b.title){
+			return 1
+		}
+		if (a.title > b.title) {
+			return -1
+		}
+		return 0
+	},
 
-		modalLi.appendChild(modalHeading);
-		modalLi.appendChild(modalImge);
-		modalLi.appendChild(modalText);
-		modalLi.appendChild(modalGanresList);
-		modalLi.appendChild(modalData);
-		modalLi.appendChild(modalClose);
-
-		node.appendChild(modalLi);
-
-	})
+	2: (a, b) => a.release_date - b.release_date,
+	3: (a, b) => b.release_date - a.release_date
 }
-console.log(renderFilmModal);
+
+elForm.addEventListener('submit', (evt) => {
+	evt.preventDefault();
+
+	const genreValue = elSelect.value;
+	const searchValue = elSearchInput.value.trim();
+	const sortValue = elSortSelect.value;
+	const newRegx = new RegExp(searchValue, 'gi');
+	
+	let filteredFilms = [];
+	
+	if(genreValue === 'all' && !searchValue) {
+		filteredFilms = films.filter((movie)=> movie.title.match(newRegx));
+	} else if (genreValue !== 'all') {
+		filteredFilms = films
+		.filter((film)=> film.genres.includes(genreValue))
+		.filter((movie)=> movie.title.match(newRegx))
+	}
+	else{
+		filteredFilms = films;
+	}
+
+	filteredFilms.sort(sortFns[sortValue])
+
+	renderFilms(filteredFilms, elList);
+})
+
 
 renderFilms(films, elList);
+generateGenres(films, elSelect);
